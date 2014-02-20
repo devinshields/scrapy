@@ -4,7 +4,8 @@ Module for processing Sitemaps.
 Note: The main purpose of this module is to provide support for the
 SitemapSpider, its API is subject to change without notice.
 """
-import lxml.etree
+#import lxml.etree as ET (disabled as buggy)
+import xml.etree.ElementTree as ET
 from cStringIO import StringIO
 
 
@@ -19,7 +20,7 @@ class Sitemap(object):
             continue
         io.seek(-1, 1)
 
-        self.xml_iterator = lxml.etree.iterparse(io, remove_comments=True, events=("start", ))
+        self.xml_iterator = ET.iterparse(io, events=("start", )) #remove_comments=True (works in lxml only)
         _, self.root = self.xml_iterator.next()
         rt = self.root.tag
         self.type = rt.split('}', 1)[1] if '}' in rt else rt
