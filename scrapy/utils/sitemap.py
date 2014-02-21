@@ -4,8 +4,7 @@ Module for processing Sitemaps.
 Note: The main purpose of this module is to provide support for the
 SitemapSpider, its API is subject to change without notice.
 """
-#import lxml.etree as ET (disabled as buggy)
-import xml.etree.ElementTree as ET
+import lxml.etree as ET
 from cStringIO import StringIO
 
 
@@ -15,18 +14,33 @@ class Sitemap(object):
 
     def __init__(self, xmltext):
 
+        #Skipping emptiness in the beginning of the file
         io = StringIO(xmltext)
         while io.read(1) != '<':
             continue
-        io.seek(-1, 1)
 
-        self.xml_iterator = ET.iterparse(io, events=("start", )) #remove_comments=True (works in lxml only)
-        _, self.root = self.xml_iterator.next()
+        io.seek(-1, 1)
+        pos = io.tell()
+
+        #Getting type of sitemap
+        xml_iterator = ET.iterparse(io, events=("start", ), remove_comments=True)
+        _, self.root = xml_iterator.next()
         rt = self.root.tag
         self.type = rt.split('}', 1)[1] if '}' in rt else rt
 
+        #Rewind the stream to the beginning of xml
+        io.seek(pos)
+
+        self.xml_iterator = ET.iterparse(io, events=("end", ), remove_comments=True)
+
     def __iter__(self):
         for event, elem in self.xml_iterator:
+
+            #Contents of the url or sitemap tag is skipped until we get it fully with end event
+            tag = elem.tag.split('}', 1)[1] if '}' in elem.tag else elem.tag
+            if tag not in ["url", "sitemap"]:
+                continue
+
             d = {}
             for el in elem.getchildren():
                 tag = el.tag
