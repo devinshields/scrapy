@@ -13,30 +13,28 @@ class Sitemap(object):
     (type=sitemapindex) files"""
 
     def __init__(self, xmltext):
-
-        #Skipping emptiness in the beginning of the file
         io = StringIO(xmltext)
-        while io.read(1) != '<':
-            continue
 
-        io.seek(-1, 1)
-        pos = io.tell()
+        # Skipping emptiness in the beginning of the file
+        pos = xmltext.find('<')
+        io.seek(pos)
 
-        #Getting type of sitemap
-        xml_iterator = ET.iterparse(io, events=("start", ), remove_comments=True)
+        # Getting type of sitemap
+        xml_iterator = ET.iterparse(io, events=("start", ),
+                                    remove_comments=True)
         _, self.root = xml_iterator.next()
         rt = self.root.tag
         self.type = rt.split('}', 1)[1] if '}' in rt else rt
 
-        #Rewind the stream to the beginning of xml
+        # Rewind the stream to the beginning of xml
         io.seek(pos)
 
-        self.xml_iterator = ET.iterparse(io, events=("end", ), remove_comments=True)
+        self.xml_iterator = ET.iterparse(io, events=("end", ),
+                                         remove_comments=True)
 
     def __iter__(self):
         for event, elem in self.xml_iterator:
 
-            #Contents of the url or sitemap tag is skipped until we get it fully with end event
             tag = elem.tag.split('}', 1)[1] if '}' in elem.tag else elem.tag
             if tag not in ["url", "sitemap"]:
                 continue
